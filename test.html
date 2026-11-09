@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверка Pipeline Warning</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #eef2f5;
+    --surface: #ffffff;
+    --text: #1b2730;
+    --muted: #55656f;
+    --line: #cbd5dd;
+    --failed: #c62f2a;
+    --passed: #1f7346;
+    --running: #2767a8;
+    --neutral: #71818c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a242c;
+      --surface: #22303a;
+      --text: #e6edf2;
+      --muted: #9db0be;
+      --line: #33454f;
+      --failed: #f0665f;
+      --passed: #4cc086;
+      --running: #6aa9e8;
+      --neutral: #8b9ca8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 "Segoe UI", "Noto Sans", system-ui, sans-serif;
+  }
+  header, #scenarios, #table-wrap { max-width: 1120px; margin: 0 auto; padding-inline: 24px; }
+  header { padding-block: 28px 16px; }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: 600; }
+  header p { margin: 0; max-width: 70ch; color: var(--muted); }
+
+  #scenarios { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 20px; }
+  #scenarios button {
+    flex: 1 1 190px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+  }
+  #scenarios button:hover { border-color: var(--muted); }
+  #scenarios small { display: block; color: var(--muted); font-size: 13px; font-weight: 400; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+
+  #signal {
+    margin: 0 0 20px;
+    padding: 14px 24px;
+    background: var(--neutral);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+  }
+  #signal[data-state="fired"] { background: #c62f2a; }
+  #signal[data-state="error"] { background: #8a5a10; }
+  #signal.flash { animation: flash .35s linear 4; }
+  @keyframes flash { 50% { background: #7d1612; } }
+  @media (prefers-reduced-motion: reduce) { #signal.flash { animation: none; } }
+
+  #table-wrap { padding-bottom: 40px; overflow-x: auto; }
+  table { width: 100%; min-width: 860px; border-collapse: collapse; background: var(--surface); }
+  th { padding: 10px 12px; color: var(--muted); font-size: 13px; font-weight: 600; text-align: left; border-bottom: 1px solid var(--line); }
+  td { padding: 10px 12px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  a { color: inherit; }
+  .commit-title { font-weight: 600; }
+  .row-status { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; font-weight: 600; }
+  [data-testid="finished-at"] { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  .stages { display: flex; align-items: center; }
+  .stages > div + div::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 2px;
+    background: var(--line);
+  }
+  .stages > div { display: inline-flex; align-items: center; }
+  .stage-button {
+    display: inline-flex;
+    padding: 3px;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+  }
+  .stage-button:hover { background: var(--line); }
+  .ci-icon { display: inline-flex; }
+  .ci-icon svg { width: 20px; height: 20px; fill: currentColor; }
+  .ci-icon-variant-danger { color: var(--failed); }
+  .ci-icon-variant-success { color: var(--passed); }
+  .ci-icon-variant-info { color: var(--running); }
+  .ci-icon-variant-neutral { color: var(--neutral); }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .fact[data-played] { color: var(--failed); font-weight: 600; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Проверка Pipeline Warning</h1>
+    <p>Страница повторяет таблицу пайплайнов GitLab и работает на том же коде расширения. Нажмите сценарий и сравните ожидание с фактом. Кружки стейджей тоже нажимаются: красный становится зелёным и обратно.</p>
+  </header>
+
+  <div id="scenarios">
+    <button type="button" data-scenario="deploy">Упал deploy<small>Звук сыграет</small></button>
+    <button type="button" data-scenario="first">Упал только первый стейдж<small>Без звука</small></button>
+    <button type="button" data-scenario="old">Старое падение deploy<small>Без звука: прошло 6 дней</small></button>
+    <button type="button" data-scenario="delayed">Упадёт через 5 секунд<small>Можно уйти на другую вкладку</small></button>
+    <button type="button" data-scenario="retry">Упадёт, перезапустится, упадёт<small>Звук сыграет дважды</small></button>
+  </div>
+
+  <p id="signal" role="status" aria-live="polite">Звук ещё не срабатывал</p>
+
+  <div id="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Статус</th><th>Пайплайн</th><th>Стейджи</th><th>Ожидание</th><th>Факт</th></tr>
+      </thead>
+      <tbody id="pipelines"></tbody>
+    </table>
+  </div>
+
+  <script src="content.js"></script>
+  <script src="picker.js"></script>
+  <script src="gif-overlay.js"></script>
+  <script src="test.js"></script>
+</body>
+</html>
