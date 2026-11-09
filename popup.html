@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Pipeline Warning</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #eef2f5;
+    --text: #1b2730;
+    --muted: #55656f;
+    --line: #cbd5dd;
+    --button: #ffffff;
+    --good: #1f7346;
+    --bad: #c62f2a;
+    --warn: #8a5a10;
+    --idle: #5a6b78;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a242c;
+      --text: #e6edf2;
+      --muted: #9db0be;
+      --line: #33454f;
+      --button: #22303a;
+      --good: #1f7346;
+      --idle: #44545f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    width: 340px;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.4 "Segoe UI", "Noto Sans", system-ui, sans-serif;
+  }
+  #lamp {
+    padding: 14px 16px;
+    color: #fff;
+    background: var(--idle);
+  }
+  #lamp[data-state="watching"] { background: var(--good); }
+  #lamp[data-state="no-rows"] { background: var(--warn); }
+  #lamp strong { display: block; font-size: 17px; font-weight: 600; }
+  #lamp span { display: block; margin-top: 2px; font-size: 13px; }
+  main { padding: 12px 16px 16px; }
+  #rows { list-style: none; margin: 0 0 12px; padding: 0; max-height: 180px; overflow-y: auto; }
+  #rows:empty { display: none; }
+  #rows li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  #rows small { display: block; color: var(--muted); font-size: 13px; }
+  #last { margin: 0 0 12px; }
+  #last[data-failed] { color: var(--bad); }
+  button {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--button);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--muted); }
+  button:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+  button:disabled { cursor: default; opacity: .6; }
+  #sound-result { margin: 8px 0 0; color: var(--muted); }
+  #sound-result:empty { display: none; }
+</style>
+</head>
+<body>
+  <div id="lamp" data-state="idle"><strong></strong><span></span></div>
+  <main>
+    <ul id="rows"></ul>
+    <p id="last"></p>
+    <button id="pick" type="button">Выбрать элемент на странице</button>
+    <button id="open-options" type="button">Настроить правила</button>
+    <button id="test-sound" type="button">Проверить звук</button>
+    <button id="open-test" type="button">Открыть тестовую страницу</button>
+    <p id="sound-result" role="status"></p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
