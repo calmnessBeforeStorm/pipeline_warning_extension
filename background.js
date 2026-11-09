@@ -2,7 +2,7 @@ importScripts('gif-overlay.js');
 
 const AUDIO_START_TIMEOUT_MS = 5000;
 const DEFAULT_GIF_MS = 5000;
-const BUILTIN_SOUND = 'blyyaaaaaaaaaaaat.mp3';
+const BUILTIN_SOUND = 'music/blyyaaaaaaaaaaaat.mp3';
 
 const DEFAULT_RULE = {
   id: 'default',
