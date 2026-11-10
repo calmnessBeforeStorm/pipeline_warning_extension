@@ -2,6 +2,7 @@ importScripts('gif-overlay.js');
 
 const AUDIO_START_TIMEOUT_MS = 5000;
 const DEFAULT_GIF_MS = 5000;
+const ALERT_LOG_LIMIT = 100;
 const BUILTIN_SOUND = 'music/blyyaaaaaaaaaaaat.mp3';
 
 const DEFAULT_RULE = {
@@ -115,6 +116,13 @@ async function fireRule(ruleId, senderTabId) {
   return result;
 }
 
+// Пишется только отсюда: очередь не даёт вкладкам затереть записи друг друга.
+async function logAlert(ruleId, alert, { ok, error, gifError }) {
+  const { alertLog = [] } = await chrome.storage.local.get('alertLog');
+  const entry = { at: Date.now(), ruleId, ...alert, ok, error, gifError };
+  await chrome.storage.local.set({ alertLog: [entry, ...alertLog].slice(0, ALERT_LOG_LIMIT) });
+}
+
 async function addPickedRule({ condition, name, branch, page, matchCount }) {
   const { rules = [] } = await chrome.storage.local.get('rules');
   const rule = { id: crypto.randomUUID(), name, enabled: true, branch, page, condition, matchCount, sound: null, gif: null };
@@ -143,8 +151,14 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
   }
   if (message?.type === 'get-sound') {
     reply({ src: currentSound });
+  } else if (message?.type === 'get-builtin-sound') {
+    reply({ src: BUILTIN_SOUND });
   } else if (message?.type === 'fire') {
-    return enqueue(() => fireRule(message.ruleId, sender.tab?.id), reply);
+    return enqueue(async () => {
+      const result = await fireRule(message.ruleId, sender.tab?.id);
+      if (message.alert) await logAlert(message.ruleId, message.alert, result); // Ручная проверка идёт без alert.
+      return result;
+    }, reply);
   } else if (message?.type === 'element-picked') {
     return enqueue(() => addPickedRule(message), reply);
   }

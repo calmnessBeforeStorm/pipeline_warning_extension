@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Отладка Pipeline Warning</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #eef2f5;
+    --surface: #ffffff;
+    --text: #1b2730;
+    --muted: #55656f;
+    --line: #cbd5dd;
+    --bad: #c62f2a;
+    --good: #1f7346;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a242c;
+      --surface: #22303a;
+      --text: #e6edf2;
+      --muted: #9db0be;
+      --line: #33454f;
+      --bad: #f0665f;
+      --good: #58b884;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 "Segoe UI", "Noto Sans", system-ui, sans-serif;
+  }
+  h1 { margin: 0 0 16px; font-size: 26px; font-weight: 600; }
+  h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+  section { margin-bottom: 12px; padding: 14px 16px; background: var(--surface); }
+  .note { margin: 0 0 12px; max-width: 70ch; color: var(--muted); font-size: 14px; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  button, .file-button {
+    display: inline-block;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button:hover, .file-button:hover { border-color: var(--muted); }
+  button:focus-visible, .file-button:focus-within { outline: 2px solid var(--text); outline-offset: 1px; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .status { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+  .status:empty { display: none; }
+  .status[data-state="error"] { color: var(--bad); }
+  .status[data-state="done"] { color: var(--good); }
+  .log-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .log-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  td.failed { color: var(--bad); }
+</style>
+</head>
+<body>
+  <h1>Отладка</h1>
+
+  <section>
+    <h2>Настройки</h2>
+    <p class="note">В файл входят правила, загруженные звуки и гифки. Встроенный звук и отметки о сработавших пайплайнах не переносятся. Загрузка заменяет все текущие правила.</p>
+    <div class="actions">
+      <button id="export-settings" type="button">Скачать настройки</button>
+      <label class="file-button">Загрузить настройки<input id="import-file" class="visually-hidden" type="file" accept=".json,application/json"></label>
+      <button id="import-confirm" type="button" hidden>Заменить настройки</button>
+      <button id="import-cancel" type="button" hidden>Отмена</button>
+    </div>
+    <p id="import-status" class="status" role="status"></p>
+  </section>
+
+  <section>
+    <h2>Отчёт</h2>
+    <p class="note">Файл для разбора проблем: версии, правила, журнал, состояние открытых вкладок GitLab и проверка встроенного звука. В нём есть адреса вкладок GitLab, селекторы, номера пайплайнов и названия веток.</p>
+    <div class="actions">
+      <button id="download-report" type="button">Скачать отчёт</button>
+    </div>
+    <p id="report-status" class="status" role="status"></p>
+  </section>
+
+  <section>
+    <div class="log-head">
+      <h2>Журнал срабатываний</h2>
+      <button id="clear-log" type="button">Очистить журнал</button>
+    </div>
+    <p class="note">Последние 100 срабатываний, новые сверху.</p>
+    <p id="log-empty" class="note">Срабатываний пока не было.</p>
+    <div id="log-table" class="log-wrap">
+      <table>
+        <thead>
+          <tr><th>Время</th><th>Правило</th><th>Что сработало</th><th>Страница</th><th>Результат</th></tr>
+        </thead>
+        <tbody id="log"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script src="debug.js"></script>
+</body>
+</html>

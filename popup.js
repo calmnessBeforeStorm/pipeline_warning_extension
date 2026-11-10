@@ -139,5 +139,9 @@ document.getElementById('open-test').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('test.html') });
 });
 
+document.getElementById('open-debug').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('debug.html') });
+});
+
 render();
 setInterval(render, REFRESH_MS);

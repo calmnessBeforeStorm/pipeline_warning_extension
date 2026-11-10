@@ -45,8 +45,7 @@ function wildcardMatches(pattern, value) {
 }
 
 // У пайплайна, который ещё идёт, времени завершения нет: это свежее падение.
-function failedRecently(row) {
-  const finishedAt = row.querySelector('[data-testid="finished-at"] time')?.dateTime;
+function failedRecently(finishedAt) {
   return !finishedAt || Date.now() - Date.parse(finishedAt) < ALERT_WINDOW_MS;
 }
 
@@ -61,11 +60,13 @@ function readRows(rules) {
     if (!link || !row.querySelector(STAGE_SELECTOR)) continue;
 
     const branch = branchOf(row);
+    const finishedAt = row.querySelector('[data-testid="finished-at"] time')?.dateTime ?? null;
     rows.push({
       id: link.getAttribute('href'),
       number: link.textContent.trim(),
       branch,
-      recent: failedRecently(row),
+      finishedAt,
+      recent: failedRecently(finishedAt),
       // Побеждает первое подходящее правило, порядок задаётся в настройках.
       rule: rowRules.find((rule) => wildcardMatches(rule.branch, branch) && conditionHolds(rule.condition, row)) ?? null,
     });
@@ -92,7 +93,7 @@ function scanRows(rows, alerted) {
     if (!alerted[key] && row.recent) {
       alerted[key] = Date.now();
       changed = true;
-      fired.push({ rule: row.rule, label: row.number });
+      fired.push({ rule: row.rule, label: row.number, href: row.id, branch: row.branch, finishedAt: row.finishedAt });
     }
   }
   return { fired, changed };
@@ -145,10 +146,11 @@ async function scan() {
 
   // Несколько звуков разом слились бы в кашу: играет первое правило.
   const { rule } = fired[0];
-  const pipelines = fired.filter((item) => item.rule.id === rule.id).map((item) => item.label);
-  const result = await chrome.runtime.sendMessage({ type: 'fire', ruleId: rule.id });
+  const items = fired.filter((item) => item.rule.id === rule.id).map(({ rule: _rule, ...details }) => details);
+  const alert = { ruleName: rule.name, kind: appliesToRows(rule) ? 'row' : 'page', url: location.href, items };
+  const result = await chrome.runtime.sendMessage({ type: 'fire', ruleId: rule.id, alert });
   await chrome.storage.local.set({
-    lastAlert: { ruleName: rule.name, pipelines, at: Date.now(), ...result },
+    lastAlert: { ruleName: rule.name, pipelines: items.map((item) => item.label), at: Date.now(), ...result },
   });
 }
 
